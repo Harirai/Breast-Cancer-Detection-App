@@ -60,7 +60,7 @@ public class Classifier {
 
     public List<Result> recognizeImage(Bitmap bitmap) {
         ByteBuffer byteBuffer = convertBitmapToByteBuffer(bitmap);
-        float[][] result = new float[1][ModelConfig.OUTPUT_LABELS.size()];
+        float[][] result = new float[1][(ModelConfig.OUTPUT_LABELS.size())];
         mInterpreter.run(byteBuffer, result);
         return getSortedResult(result);
     }
