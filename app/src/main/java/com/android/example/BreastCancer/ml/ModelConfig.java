@@ -7,7 +7,9 @@ import java.util.List;
 
 public class ModelConfig {
 
-    public static final String MODEL_FILENAME = "model2.tflite"; //Name of the tflite file.
+//    public static final String MODEL_FILENAME = "model2.tflite"; //Name of the tflite file.
+//    public static final String MODEL_FILENAME = "latest25_05_2020.tflite"; //Name of the tflite file.
+    public static final String MODEL_FILENAME = "last.tflite"; //Name of the tflite file.
 
     public static final int INPUT_IMG_SIZE_WIDTH = 224, INPUT_IMG_SIZE_HEIGHT = 224; //Input shape that model takes
     private static final int FLOAT_TYPE_SIZE = 4, PIXEL_SIZE = 3;

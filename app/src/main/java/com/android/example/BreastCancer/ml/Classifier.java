@@ -45,7 +45,10 @@ public class Classifier {
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(ModelConfig.MODEL_INPUT_SIZE);
         byteBuffer.order(ByteOrder.nativeOrder());
         int[] pixels = new int[ModelConfig.INPUT_IMG_SIZE_WIDTH * ModelConfig.INPUT_IMG_SIZE_HEIGHT];
-        bitmap.getPixels(pixels, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+        //Resize Image
+        Bitmap resizedInput = Bitmap.createScaledBitmap(bitmap, ModelConfig.INPUT_IMG_SIZE_WIDTH , ModelConfig.INPUT_IMG_SIZE_HEIGHT, true);;
+        resizedInput.getPixels(pixels, 0, resizedInput.getWidth(), 0, 0, resizedInput.getWidth(), resizedInput.getHeight());
+        //edit Over
         for (int pixel : pixels) {
             float rChannel = ((pixel >> 16) & 0xFF) / ModelConfig.IMAGE_STD;
             float gChannel = ((pixel >> 8) & 0xFF) / ModelConfig.IMAGE_STD;
@@ -60,7 +63,9 @@ public class Classifier {
 
     public List<Result> recognizeImage(Bitmap bitmap) {
         ByteBuffer byteBuffer = convertBitmapToByteBuffer(bitmap);
-        float[][] result = new float[1][(ModelConfig.OUTPUT_LABELS.size())];
+//        float[][] result = new float[1][(ModelConfig.OUTPUT_LABELS.size()-1)]; // Softmax Classification
+        float[][] result = new float[1][1]; // For sigmoid Yes/No
+
         mInterpreter.run(byteBuffer, result);
         return getSortedResult(result);
     }
@@ -71,12 +76,17 @@ public class Classifier {
                 (lhs, rhs) -> Float.compare(rhs.mConfidence, lhs.mConfidence)
         );
 
-        for (int i = 0; i < ModelConfig.OUTPUT_LABELS.size(); ++i) {
+        for (int i = 0; i < ModelConfig.OUTPUT_LABELS.size()-1; ++i) {
             float confidence = result[0][i];
             if (confidence > ModelConfig.CLASSIFICATION_THRESHOLD) {
                 ModelConfig.OUTPUT_LABELS.size();
-                sortedResults.add(new Result(ModelConfig.OUTPUT_LABELS.get(i), confidence));
+//                sortedResults.add(new Result(ModelConfig.OUTPUT_LABELS.get(i), confidence));
+                sortedResults.add(new Result(ModelConfig.OUTPUT_LABELS.get(1), confidence)); // Added for sigmoid
+            } // Added for sigmoid
+            else{
+                sortedResults.add(new Result(ModelConfig.OUTPUT_LABELS.get(0), (1-confidence)));
             }
+
         }
 
         return new ArrayList<>(sortedResults);

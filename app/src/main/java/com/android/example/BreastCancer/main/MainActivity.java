@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
         int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
         returnCursor.moveToFirst();
         String actualLabel = returnCursor.getString(nameIndex);   // actualLabel string contains the name of file selected.
-        if (result.mConfidence * 100 > 85) { // If confidence is lower than 85%, I assume it's not a cell! (Deadline is near :P)
+        if (result.mConfidence * 100 > 0) { // If confidence is lower than 85%, I assume it's not a cell!
             mResultTextView.setText(getString(R.string.result_string, result.mTitle, confidence));
             flag = 1;
         } else {
@@ -257,7 +257,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         //create object of Document class
-        if (haveStoragePermission() != true) {
+        if (!haveStoragePermission()) {
             Toast.makeText(this, "Permission Denied!", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -292,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
             mDoc.addAuthor("Harirai and Ayush");
 
             //add paragraphs to the document
-            mDoc.add(new Paragraph("Breast Cancer Detection App - IIT BHU", FontFactory.getFont(FontFactory.TIMES_BOLD, 20 , Font.BOLD)));
+            mDoc.add(new Paragraph("Breast Cancer Detection App - IIT BHU", FontFactory.getFont(FontFactory.TIMES_BOLD, 20, Font.BOLD)));
 
             mDoc.add(new Paragraph(dateText));
             mDoc.add(new Paragraph(patientIdText));
@@ -303,6 +303,7 @@ public class MainActivity extends AppCompatActivity {
             mDoc.add(new Paragraph(resultText));
             String reqpath = getRealPathFromURI(imageUri);
             Image image1 = Image.getInstance(reqpath);
+            image1.scaleToFit(224, 224);  // Scale image to fit properly!
             mDoc.add(image1);
             //close the document
             mDoc.close();
