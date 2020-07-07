@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-
     <item>
         <shape>
             <solid android:color="@color/colorAccent" />
@@ -10,5 +9,12 @@
     <item
         android:drawable="@drawable/ic_plant"
         android:gravity="center" />
+    <item android:bottom="5dp"
+        android:height="70dp">
+        <bitmap
+
+            android:gravity="center_horizontal"
+            android:src="@drawable/app_title"/>
+    </item>
 
 </layer-list>

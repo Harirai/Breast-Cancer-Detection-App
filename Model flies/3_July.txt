@@ -1,0 +1,3 @@
+Benign
+Malignant
+None

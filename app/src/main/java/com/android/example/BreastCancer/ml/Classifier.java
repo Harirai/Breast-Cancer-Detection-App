@@ -63,8 +63,9 @@ public class Classifier {
 
     public List<Result> recognizeImage(Bitmap bitmap) {
         ByteBuffer byteBuffer = convertBitmapToByteBuffer(bitmap);
-//        float[][] result = new float[1][(ModelConfig.OUTPUT_LABELS.size()-1)]; // Softmax Classification
-        float[][] result = new float[1][1]; // For sigmoid Yes/No
+        float[][] result = new float[1][(ModelConfig.OUTPUT_LABELS.size())]; // Softmax Classification
+
+//        float[][] result = new float[1][1]; // For sigmoid Yes/No
 
         mInterpreter.run(byteBuffer, result);
         return getSortedResult(result);
@@ -76,16 +77,17 @@ public class Classifier {
                 (lhs, rhs) -> Float.compare(rhs.mConfidence, lhs.mConfidence)
         );
 
-        for (int i = 0; i < ModelConfig.OUTPUT_LABELS.size()-1; ++i) {
+        for (int i = 0; i < ModelConfig.OUTPUT_LABELS.size(); ++i) {
             float confidence = result[0][i];
             if (confidence > ModelConfig.CLASSIFICATION_THRESHOLD) {
                 ModelConfig.OUTPUT_LABELS.size();
-//                sortedResults.add(new Result(ModelConfig.OUTPUT_LABELS.get(i), confidence));
-                sortedResults.add(new Result(ModelConfig.OUTPUT_LABELS.get(1), confidence)); // Added for sigmoid
-            } // Added for sigmoid
-            else{
-                sortedResults.add(new Result(ModelConfig.OUTPUT_LABELS.get(0), (1-confidence)));
+                sortedResults.add(new Result(ModelConfig.OUTPUT_LABELS.get(i), confidence));
+//                sortedResults.add(new Result(ModelConfig.OUTPUT_LABELS.get(1), confidence)); // Added for sigmoid
             }
+//            // Added for sigmoid
+//            else{
+//                sortedResults.add(new Result(ModelConfig.OUTPUT_LABELS.get(0), (1-confidence)));
+//            }
 
         }
 

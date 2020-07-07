@@ -1,5 +1,9 @@
 <resources>
 
+    <style name="HeaderBar">
+        <item name="android:background">@color/colorAccent</item>
+    </style>
+
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@android:color/black</item>

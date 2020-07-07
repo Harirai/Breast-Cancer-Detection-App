@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Breast Cancer Detection</string>
     <string name="result_string"><b>Predicted class : %1$s</b>\n<i>Confidence : %2$s</i></string>
+<!--    <string name="result_string"><b>Predicted class : %1$s</b>\n</string>-->
     <string name="classify_label">Classify</string>
     <string name="choose_image_label">Choose Image</string>
 </resources>

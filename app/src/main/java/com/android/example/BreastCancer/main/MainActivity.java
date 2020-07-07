@@ -1,13 +1,14 @@
 package com.android.example.BreastCancer.main;
 
 import android.Manifest;
+import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.ThumbnailUtils;
 import android.os.Build;
@@ -16,8 +17,12 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Toast;
 import android.net.Uri;
 import android.view.View;
@@ -29,16 +34,18 @@ import com.android.example.BreastCancer.ml.ModelConfig;
 import com.android.example.BreastCancer.utils.ImageUtils;
 import com.google.android.material.button.MaterialButton;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.appcompat.widget.AppCompatTextView;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 
 import com.itextpdf.text.Document;
@@ -53,16 +60,19 @@ public class MainActivity extends AppCompatActivity {
 
     private AppCompatImageView myChosenImageView;
     private AppCompatTextView mResultTextView;
-    private MaterialButton mChooseButton, mClassifyButton,
+    private MaterialButton  mClassifyButton,
             retrieveEntryButton, mySubmitButton;
-    private Button generateReport;
+//    private Button generateReport;
+    private ImageButton mChooseButton, cameraButton;
     private Uri imageUri;
     private Classifier mClassifier;
     private EditText yourName, yourAge, phoneNumber, yourSex;
     private String saveId;
     private String saveId2 = saveId + "0", saveId3 = saveId + "1",
             saveId4 = saveId + "2", saveId5 = saveId + "3";
-    private static int RESULT_LOAD_IMAGE = 1, flag = 0, retr = 0;
+    private static int RESULT_LOAD_IMAGE = 1, flag = 0;
+    private static final int MY_CAMERA_PERMISSION_CODE = 100;
+    private static final int CAMERA_REQUEST = 1888;
 
     public static Intent getIntent(Context packageContext) {
         return new Intent(packageContext, MainActivity.class);
@@ -76,8 +86,49 @@ public class MainActivity extends AppCompatActivity {
         wireUpWidgets();       //initialise variables for button
         setListeners();  //on click choose and set button
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.main_toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("Breast Cancer Detection");
+        }
+        toolbar.setSubtitle("IIT BHU");
+        toolbar.inflateMenu(R.menu.menu_main);
+
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+//            case R.id.menuCamera:
+//                Intent i = new Intent(
+//                        Intent.ACTION_PICK,
+//                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI); //might want to use internal
+//
+//
+//                startActivityForResult(i, RESULT_LOAD_IMAGE);
+//                Toast.makeText(this, "Open the Camera", Toast.LENGTH_SHORT).show();
+//                return true;
+            case R.id.menuPDF:
+                if(!retrieveEntry()){
+                    return true;
+                }
+                generatePDF();
+//                Toast.makeText(this, "Here Comes PDF", Toast.LENGTH_SHORT).show();
+                return true;
+            case R.id.menuExit:
+                Toast.makeText(this, "Exit here", Toast.LENGTH_SHORT).show();
+                finishAndRemoveTask();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
     private void loadClassifier() {
         try {
             mClassifier = Classifier.createClassifier(getAssets(), ModelConfig.MODEL_FILENAME);
@@ -101,21 +152,67 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
+        cameraButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            @TargetApi(Build.VERSION_CODES.M)
+            public void onClick(View v)
+            {
+                if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)
+                {
+                    requestPermissions(new String[]{Manifest.permission.CAMERA}, MY_CAMERA_PERMISSION_CODE);
+                }
+                else
+                {
+                    Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                    startActivityForResult(cameraIntent, CAMERA_REQUEST);
+                }
+            }
+        });
         mClassifyButton.setOnClickListener(v -> detectImage());
         mySubmitButton.setOnClickListener((v -> submitEntry()));
-        retrieveEntryButton.setOnClickListener((v -> retrieveEntry()));
-        generateReport.setOnClickListener((v -> generatePDF()));
+
+//        retrieveEntryButton.setOnClickListener((v -> retrieveEntry()));
+//        generateReport.setOnClickListener((v -> generatePDF()));
     }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
+    {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == MY_CAMERA_PERMISSION_CODE)
+        {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            {
+                Toast.makeText(this, "Camera permission granted", Toast.LENGTH_LONG).show();
+                Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(cameraIntent, CAMERA_REQUEST);
+            }
+            else
+            {
+                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
 
+        super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && null != data) {
             imageUri = data.getData();
             myChosenImageView.setImageURI(imageUri);
 
+        }
+
+        if (requestCode == CAMERA_REQUEST && resultCode == Activity.RESULT_OK)
+        {
+            assert data != null;
+//            imageUri = (Uri) data.getData();
+//            imageUri = (Uri) Objects.requireNonNull(data.getExtras()).get("data");
+
+            Bitmap myBitmap = (Bitmap) data.getExtras().get("data");
+            myChosenImageView.setImageBitmap(myBitmap);
         }
 
 
@@ -133,22 +230,31 @@ public class MainActivity extends AppCompatActivity {
         List<Result> recognitions = mClassifier.recognizeImage(bitmap);
         Result result = recognitions.get(0);
         String confidence = String.format(Locale.getDefault(), "%.2f %%", result.mConfidence * 100);
-        Cursor returnCursor =
-                getContentResolver().query(imageUri, null, null, null, null);
-        /*
-         * Get the column indexes of the data in the Cursor,
-         * move to the first row in the Cursor, get the data,
-         * and display it.
-         */
-        int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-        int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
-        returnCursor.moveToFirst();
-        String actualLabel = returnCursor.getString(nameIndex);   // actualLabel string contains the name of file selected.
-        if (result.mConfidence * 100 > 0) { // If confidence is lower than 85%, I assume it's not a cell!
-            mResultTextView.setText(getString(R.string.result_string, result.mTitle, confidence));
+//        Cursor returnCursor =
+//                getContentResolver().query(imageUri, null, null, null, null);
+//        /*
+//         * Get the column indexes of the data in the Cursor,
+//         * move to the first row in the Cursor, get the data,
+//         * and display it.
+//         */
+//        int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+//        int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
+//        returnCursor.moveToFirst();
+//        String actualLabel = returnCursor.getString(nameIndex);   // actualLabel string contains the name of file selected.
+
+        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 50, getResources().getDisplayMetrics());
+        mResultTextView.setHeight(height);
+        mResultTextView.setPadding(0,30, 0, 2);
+        mResultTextView.setBackground(getDrawable(R.drawable.border));
+
+        if (!result.mTitle.equals("None")) { // If confidence is lower than 85%, I assume it's not a cell!
+//            mResultTextView.setText(getString(R.string.result_string, result.mTitle, confidence));
+            mResultTextView.setText("Predicted class is "+ result.mTitle);
+
             flag = 1;
         } else {
             mResultTextView.setText("Please enter image of a cell!");
+            mResultTextView.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
         }
     }
 
@@ -185,11 +291,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void retrieveEntry() {
+    private boolean retrieveEntry() {
         saveId = phoneNumber.getText().toString();
         if (saveId.isEmpty()) {
             Toast.makeText(this, "Please Enter a valid number!", Toast.LENGTH_SHORT).show();
-            return;
+            return false;
         }
         saveId2 = saveId + "0";
         saveId3 = saveId + "1";
@@ -205,8 +311,8 @@ public class MainActivity extends AppCompatActivity {
         String userImage = user_details.getString(saveId5, def);
 
         if (aResult == def || userName == def || userAge == def || userSex == def) {
-            Toast.makeText(this, "No record found! :(", Toast.LENGTH_SHORT).show();
-            return;
+            Toast.makeText(this, "No record found! :( \n Make sure to save entry!", Toast.LENGTH_SHORT).show();
+            return false;
         }
         mResultTextView.setText(aResult);
         yourName.setText(userName);
@@ -214,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
         yourSex.setText(userSex);
         imageUri = Uri.parse(userImage);
         myChosenImageView.setImageURI(imageUri);
-        retr = 1;
+        return true;
     }
 
     public boolean haveStoragePermission() {
@@ -251,10 +357,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void generatePDF() {
-        if (retr == 0) {
-            Toast.makeText(this, "First retrieve an entry!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+//        if (retr == 0) {
+//            Toast.makeText(this, "First retrieve an entry!", Toast.LENGTH_SHORT).show();
+//            return;
+//        }
 
         //create object of Document class
         if (!haveStoragePermission()) {
@@ -320,18 +426,18 @@ public class MainActivity extends AppCompatActivity {
     private void wireUpWidgets() {
         myChosenImageView = findViewById(R.id.pic_image_view); //name changed!
         mResultTextView = findViewById(R.id.result_text_view);
-        mChooseButton = findViewById(R.id.random_choose_button);
+        mChooseButton = findViewById(R.id.imageButton3);
         mClassifyButton = findViewById(R.id.classifiy_button);
-
+        cameraButton = findViewById(R.id.imageButton4);
 
         //Add-ons!!
-        generateReport = findViewById(R.id.generateReport);
+//        generateReport = findViewById(R.id.generateReport);
         yourSex = findViewById(R.id.editText4);
         mySubmitButton = findViewById(R.id.create_button);
         yourName = findViewById(R.id.editText);
         yourAge = findViewById(R.id.editText2);
         phoneNumber = findViewById(R.id.editText3);
-        retrieveEntryButton = findViewById(R.id.create_button2);
+//        retrieveEntryButton = findViewById(R.id.create_button2);
     }
 
     private int getScreenWidth() {
